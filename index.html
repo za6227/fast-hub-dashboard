@@ -668,8 +668,10 @@
         }
 
         // Filters Engine
-        function getFilteredUsers() {
+function getFilteredUsers() {
             return appState.users.filter(u => {
+                const matchPlace = u.placeId === "94217045453265";
+
                 const query = appState.searchQuery.toLowerCase();
                 const matchSearch = !query || 
                     (u.rawName && u.rawName.toLowerCase().includes(query)) ||
@@ -680,7 +682,7 @@
                 const matchDevice = appState.filterDevice === 'ALL' || u.device === appState.filterDevice;
                 const matchExec = appState.filterExecutor === 'ALL' || (u.executor && u.executor.toLowerCase().includes(appState.filterExecutor.toLowerCase()));
 
-                return matchSearch && matchDevice && matchExec;
+                return matchPlace && matchSearch && matchDevice && matchExec;
             });
         }
 
