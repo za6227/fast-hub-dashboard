@@ -454,15 +454,27 @@
         }
 
         // Generate synthetic live data that mirrors user's Discord logs
-        function generateInitialMockData() {
+function generateInitialMockData() {
             const now = Date.now();
             appState.users = mockSeedNames.map((seed, idx) => {
                 const ping = Math.floor(Math.random() * 60) + 25;
                 const fps = seed.device === 'PC' ? Math.floor(Math.random() * 80) + 60 : Math.floor(Math.random() * 35) + 20;
-                const placeKeys = Object.keys(placeNames);
-                const placeId = placeKeys[idx % placeKeys.length];
 
                 return {
+                    username: `${seed.name} (@${seed.handle})`,
+                    rawName: seed.name,
+                    handle: seed.handle,
+                    userId: seed.id,
+                    device: seed.device,
+                    executor: seed.exec,
+                    placeId: "94217045453265",
+                    placeTitle: "Dueling Grounds",
+                    ping: ping,
+                    fps: fps,
+                    lastSeen: now - (idx * 6000)
+                };
+            });
+        }
                     username: `${seed.name} (@${seed.handle})`,
                     rawName: seed.name,
                     handle: seed.handle,
