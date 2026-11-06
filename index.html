@@ -379,13 +379,13 @@
     <!-- Application JavaScript Engine -->
     <script>
         let appState = {
-            mode: 'mock',
-            serverUrl: 'https://heartbeat-server-h5r4.onrender.com',
-            searchQuery: '',
-            filterDevice: 'ALL',
-            filterExecutor: 'ALL',
-            users: []
-        };
+    mode: 'live', // เปลี่ยนเป็น live เพื่อดึงคนเล่นจริง
+    serverUrl: 'https://heartbeat-server-h5r4.onrender.com',
+    searchQuery: '',
+    filterDevice: 'ALL',
+    filterExecutor: 'ALL',
+    users: []
+};
 
         const mockSeedNames = [
             { name: "Cainexcfy", handle: "jaijwi321123", id: "8471852999", device: "Mobile", exec: "Delta" },
