@@ -378,32 +378,20 @@
 
     <!-- Application JavaScript Engine -->
     <script>
-        let appState = {
-    mode: 'live', // เปลี่ยนเป็น live เพื่อดึงคนเล่นจริง
-    serverUrl: 'https://heartbeat-server-h5r4.onrender.com',
-    searchQuery: '',
-    filterDevice: 'ALL',
-    filterExecutor: 'ALL',
-    users: []
-};
-
-        const mockSeedNames = [
-            { name: "Cainexcfy", handle: "jaijwi321123", id: "8471852999", device: "Mobile", exec: "Delta" },
-            { name: "giabao12121234", handle: "giabao12121234", id: "11943446985", device: "Mobile", exec: "Arceus X" },
-            { name: "Nael", handle: "yoyouourir", id: "4029381032", device: "Mobile", exec: "Delta" },
-            { name: "Befannn", handle: "melkias94", id: "8611463483", device: "Mobile", exec: "Delta" },
-            { name: "ShadowHunter_99", handle: "shadow_pc", id: "9831742011", device: "PC", exec: "Solara" },
-            { name: "KryptoBlox", handle: "krypto_dev", id: "3318920194", device: "PC", exec: "Wave" },
-            { name: "VortexGamer", handle: "vortex_x", id: "7721849021", device: "Mobile", exec: "Codex" },
-            { name: "AetherKnight", handle: "aether_k", id: "5129481944", device: "PC", exec: "Synapse X" }
-        ];
+                let appState = {
+            serverUrl: 'https://heartbeat-server-h5r4.onrender.com',
+            searchQuery: '',
+            filterDevice: 'ALL',
+            filterExecutor: 'ALL',
+            users: []
+        };
 
         window.addEventListener('DOMContentLoaded', () => {
             initClock();
-            generateInitialMockData();
-            renderDashboard();
+            refreshData(true); // ดึงข้อมูลจริงจาก Server ทันทีที่เปิดเว็บ
             lucide.createIcons();
 
+            // ดึงข้อมูลอัปเดตอัตโนมัติทุกๆ 5 วินาที
             setInterval(() => {
                 refreshData(false);
             }, 5000);
@@ -421,87 +409,36 @@
             setInterval(update, 1000);
         }
 
-        function generateInitialMockData() {
-            const now = Date.now();
-            appState.users = mockSeedNames.map((seed, idx) => {
-                const ping = Math.floor(Math.random() * 60) + 25;
-                const fps = seed.device === 'PC' ? Math.floor(Math.random() * 80) + 60 : Math.floor(Math.random() * 35) + 20;
-
-                return {
-                    username: `${seed.name} (@${seed.handle})`,
-                    rawName: seed.name,
-                    handle: seed.handle,
-                    userId: seed.id,
-                    device: seed.device,
-                    executor: seed.exec,
-                    placeId: "94217045453265",
-                    placeTitle: "Dueling Grounds",
-                    ping: ping,
-                    fps: fps,
-                    lastSeen: now - (idx * 6000)
-                };
-            });
-        }
-
         async function refreshData(manual = false) {
             const refreshIcon = document.getElementById('refresh-icon');
             if (manual && refreshIcon) refreshIcon.classList.add('animate-spin');
 
-            if (appState.mode === 'mock') {
-                const now = Date.now();
-                appState.users.forEach(u => {
-                    u.ping = Math.max(15, u.ping + (Math.floor(Math.random() * 11) - 5));
-                    u.fps = Math.max(12, Math.min(144, u.fps + (Math.floor(Math.random() * 7) - 3)));
-                    if (Math.random() > 0.4) {
-                        u.lastSeen = now - Math.floor(Math.random() * 12000);
-                    }
-                });
-
-                if (Math.random() > 0.85 && appState.users.length < 12) {
-                    const randomId = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-                    const isPc = Math.random() > 0.6;
-                    appState.users.unshift({
-                        username: `Player_${randomId.slice(0, 4)} (@user_${randomId.slice(0, 4)})`,
-                        rawName: `Player_${randomId.slice(0, 4)}`,
-                        handle: `user_${randomId.slice(0, 4)}`,
-                        userId: randomId,
-                        device: isPc ? 'PC' : 'Mobile',
-                        executor: isPc ? 'Solara' : (Math.random() > 0.5 ? 'Delta' : 'Arceus X'),
-                        placeId: "94217045453265",
-                        placeTitle: "Dueling Grounds",
-                        ping: Math.floor(Math.random() * 45) + 30,
-                        fps: isPc ? 85 : 30,
-                        lastSeen: now
-                    });
-                }
+            try {
+                const res = await fetch(`${appState.serverUrl}/api/users`, { cache: 'no-store' });
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                const data = await res.json();
+                
+                const receivedUsers = Array.isArray(data) ? data : (data.users || []);
+                appState.users = receivedUsers;
+                
+                document.getElementById('server-status-dot').className = "inline-block w-2 h-2 rounded-full bg-emerald-400";
+                document.getElementById('server-status-text').innerText = "Live API Connected";
                 renderDashboard();
-            } else {
-                try {
-                    const res = await fetch(`${appState.serverUrl}/api/users`, { cache: 'no-store' });
-                    if (!res.ok) throw new Error("HTTP error " + res.status);
-                    const data = await res.json();
-                    
-                    const receivedUsers = Array.isArray(data) ? data : (data.users || []);
-                    appState.users = receivedUsers;
-                    
-                    document.getElementById('server-status-dot').className = "inline-block w-2 h-2 rounded-full bg-emerald-400";
-                    document.getElementById('server-status-text').innerText = "Live Render Connected";
-                    renderDashboard();
-                } catch (err) {
-                    console.warn("Could not fetch live users endpoint:", err);
-                    document.getElementById('server-status-dot').className = "inline-block w-2 h-2 rounded-full bg-amber-400";
-                    document.getElementById('server-status-text').innerText = "Render API (/api/users not responding)";
-                }
+            } catch (err) {
+                console.warn("Could not fetch live users endpoint:", err);
+                document.getElementById('server-status-dot').className = "inline-block w-2 h-2 rounded-full bg-rose-500";
+                document.getElementById('server-status-text').innerText = "Server Offline / Connecting...";
+                renderDashboard();
             }
 
             if (manual && refreshIcon) {
                 setTimeout(() => {
                     refreshIcon.classList.remove('animate-spin');
-                    showToast("Refreshed user metrics successfully", "check-circle");
+                    showToast("อัปเดตข้อมูลผู้เล่นล่าสุดแล้ว", "check-circle");
                 }, 500);
             }
         }
-
+        
         function renderDashboard() {
             const filtered = getFilteredUsers();
 
